@@ -5,20 +5,28 @@ from bs4 import BeautifulSoup
 import re
 
 
-def parse_value(value: str) -> object:
-    if '+' in value:
-        return [parse_value(v) for v in value.split('+')]
+def parse_stat_progression(stat_progression):
+    headers = [elem.text for elem in stat_progression.contents[0] if elem.text != 'Ascension']
+    size = len(headers)
+    levels = []
+    for row in stat_progression.contents[1:]:
+        row_data = []
+        for i in range(size):
+            row_data.append(row.contents[i].text)
+        levels.append(row_data)
 
-    val = value.replace('HP', '')
-
-    if val.endswith('%'):
-        return float(val[:-1]) / 100
-
-    return int(val)
+    return headers, levels
 
 
-def parse_skills(value:str):
-    return
+def parse_normal(normal):
+    matrix = []
+    for row in normal.contents[1:]:
+        matrix.append([elem.text for elem in row.contents])
+
+    matrix = list(zip(*matrix))
+    headers = matrix[0]
+    levels = matrix[1:]
+    return headers, levels
 
 
 def main(char_name):
@@ -37,50 +45,38 @@ def main(char_name):
     text = response.text
 
     soup = BeautifulSoup(text, 'lxml')
+    full_name = soup.find('div', {'class': ['custom_title']}).text
+    result['main_info']['full_name'] = full_name
+
+    element_img = soup.find('img', {'class': ['char_portrait_card_sea_element']})
+    element_elem = element_img.attrs['data-src']
+    i = element_elem.rfind('/')
+    j = element_elem.find('_', i)
+    element = element_elem[i+1:j]
+    result['main_info']['element'] = element
+
     live_data = soup.find('div', {'id': 'live_data'})
+    span_stats = live_data.find_all('div', {'class': ['skilldmgwrapper']})
 
-    # --- stats ---
-
-    span_stats = live_data.find('span', {'id': 'scroll_stat'})
-    table_stats = span_stats.next_sibling.next
-    header_element = table_stats.contents[0]
-    print(header_element)
-    data_elements = table_stats.contents[1:]
-    headers = [elem.text for elem in header_element.contents if elem.text != 'Ascension']
-    levels = []
-    for level in data_elements:
-
-        stats = [level.contents[0].text]
-
-        for i in range(1, len(headers)):
-            elem = level.contents[i]
-
-            stats.append(parse_value(elem.text))
-
-        levels.append(stats)
-
+    headers, levels = parse_stat_progression(span_stats[0].next)
     result['stat_progression']['headers'] = headers
     result['stat_progression']['levels'] = levels
 
-    # --- talents --
-    span_stats = live_data.find_all('div', {'class': ['skilldmgwrapper']})
-    for content in span_stats:
-        for level in content:
-            #print([elem.text for elem in level.contents])
-            for elem in level.contents:
-                print(elem.contents[2])
-            #print([level.contents.text])
-            #print(soup.find_all(r'<td>(.+?)</td>', level.contents[1]))
+    headers, levels = parse_normal(span_stats[1].next)
+    result['normal']['headers'] = headers
+    result['normal']['levels'] = levels
 
+    headers, levels = parse_normal(span_stats[2].next)
+    result['skill']['headers'] = headers
+    result['skill']['levels'] = levels
 
-            #headers = [elem.text for elem in level.contents]
-
-    pass
+    headers, levels = parse_normal(span_stats[3].next)
+    result['burst']['headers'] = headers
+    result['burst']['levels'] = levels
 
     with open(f'{char_name}.json', 'w') as file:
         file.write(json.dumps(result, indent=2))
 
 
 if __name__ == '__main__':
-    main('xinyan')
-    #main(sys.argv[1])
+    main(sys.argv[1])
