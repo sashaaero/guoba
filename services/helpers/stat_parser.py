@@ -45,6 +45,9 @@ def main(char_name):
     text = response.text
 
     soup = BeautifulSoup(text, 'lxml')
+
+    # ------ Main info ------
+
     full_name = soup.find('div', {'class': ['custom_title']}).text
     result['main_info']['full_name'] = full_name
 
@@ -55,24 +58,35 @@ def main(char_name):
     element = element_elem[i+1:j]
     result['main_info']['element'] = element
 
+    weapon_type = soup.find('a', href=re.compile('^/db/weapon/'))
+    result['main_info']['weapon'] = weapon_type.contents[0]
+
+    # ------ Talants and Stat ------
+
     live_data = soup.find('div', {'id': 'live_data'})
     span_stats = live_data.find_all('div', {'class': ['skilldmgwrapper']})
+    name_stats = live_data.find_all('table', {'class': ['item_main_table']})
 
     headers, levels = parse_stat_progression(span_stats[0].next)
     result['stat_progression']['headers'] = headers
     result['stat_progression']['levels'] = levels
 
     headers, levels = parse_normal(span_stats[1].next)
+    result['normal']['title'] = name_stats[1].next.contents[1].contents[0].text
     result['normal']['headers'] = headers
     result['normal']['levels'] = levels
 
     headers, levels = parse_normal(span_stats[2].next)
+    result['skill']['title'] = name_stats[3].next.contents[1].contents[0].text
     result['skill']['headers'] = headers
     result['skill']['levels'] = levels
 
     headers, levels = parse_normal(span_stats[3].next)
+    result['burst']['title'] = name_stats[4].next.contents[1].contents[0].text
     result['burst']['headers'] = headers
     result['burst']['levels'] = levels
+
+    # ------ Saving result ------
 
     with open(f'{char_name}.json', 'w') as file:
         file.write(json.dumps(result, indent=2))
