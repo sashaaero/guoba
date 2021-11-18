@@ -1,5 +1,6 @@
 from typing import Union
 from enum import Enum
+from dataclasses import dataclass
 
 
 # noinspection PyPep8Naming
@@ -37,67 +38,66 @@ class percent:
         raise NotImplementedError
 
 
+@dataclass
 class Talents:
     auto: int
     skill: int
     burst: int
 
 
+@dataclass
 class Weapon:
     level: int
     ascension: int
     refinement: int
+    atk: int  # TODO REMOVE
 
 
-class ArtifactType(Enum, str):
-    flower = 'flower'
-    plume = 'plume'
-    sands = 'sands'
-    goblet = 'goblet'
-    circlet = 'circlet'
+#class ArtifactType(Enum, str):
+#    flower = 'flower'
+#    plume = 'plume'
+#    sands = 'sands'
+#    goblet = 'goblet'
+#   circlet = 'circlet'
 
 
-class ArtifactStatType(Enum, str):
-    hp = 'hp'
-    hp_percent = 'hp_'
-    atk = 'atk'
-    atk_percent = 'atk_'
-    def_percent = 'def_'
-    elemental_mastery = 'eleMas'
-    energy_recharge = 'enerRech_'
-    crit_rate = 'critRate_'
-    crit_damage = 'critDMG_'
-    hydro_dmg = 'hydro_dmg_'
-    electro_dmg = 'electro_dmg_'
-    pyro_dmg = 'pyro_dmg_'
-    dendro_dmg = 'dendro_dmg_'
-    anemo_dmg = 'anemo_dmg_'
-    cryo_dmg = 'cryo_dmg_'
-    geo_dmg = 'geo_dmg_'
-    physical_dmg = 'physical_dmg_'
-    healing_bonus = 'heal_'
+#class ArtifactStatType(Enum, str):
+#    hp = 'hp'
+#    hp_percent = 'hp_'
+#    atk = 'atk'
+#    atk_percent = 'atk_'
+#    def_percent = 'def_'
+#    elemental_mastery = 'eleMas'
+#    energy_recharge = 'enerRech_'
+#    crit_rate = 'critRate_'
+#    crit_damage = 'critDMG_'
+#    hydro_dmg = 'hydro_dmg_'
+#    electro_dmg = 'electro_dmg_'
+#    pyro_dmg = 'pyro_dmg_'
+#    dendro_dmg = 'dendro_dmg_'
+#    anemo_dmg = 'anemo_dmg_'
+#    cryo_dmg = 'cryo_dmg_'
+#    geo_dmg = 'geo_dmg_'
+#    physical_dmg = 'physical_dmg_'
+#    healing_bonus = 'heal_'
 
 
-class Artifact:
-    key: str  # TODO: Define all artifact sets
-    slot: str
-    type: ArtifactType
-    level: int
-    rarity: int
-    main_stat_key: ArtifactStatType
-    substats: dict[ArtifactStatType, Union[int, percent]]
+#class Artifact:
+#    key: str  # TODO: Define all artifact sets
+#    slot: str
+#    type: ArtifactType
+#    level: int
+#    rarity: int
+#    main_stat_key: ArtifactStatType
+#    substats: dict[ArtifactStatType, Union[int, percent]]
 
-
+@dataclass
 class Character:
     level: int
     constellation: int
     ascension: int
     talents: Talents
     weapon: Weapon
-
-    def __init__(self, *args):
-        if self.__name__ == 'Character':
-            raise NotImplementedError('Base class Character cannot be instanced')
 
     @property
     def base_hp(self) -> int:
