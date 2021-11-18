@@ -46,6 +46,10 @@ def main(char_name):
 
     soup = BeautifulSoup(text, 'lxml')
 
+    tables_order = {'normal': 1, 'skill': 2, 'burst': 3}
+    if char_name in ('ayaka', 'mona'):
+        tables_order['burst'] = 4
+
     # ------ Main info ------
 
     full_name = soup.find('div', {'class': ['custom_title']}).text
@@ -71,20 +75,11 @@ def main(char_name):
     result['stat_progression']['headers'] = headers
     result['stat_progression']['levels'] = levels
 
-    headers, levels = parse_normal(span_stats[1].next)
-    result['normal']['title'] = name_stats[1].next.contents[1].contents[0].text
-    result['normal']['headers'] = headers
-    result['normal']['levels'] = levels
-
-    headers, levels = parse_normal(span_stats[2].next)
-    result['skill']['title'] = name_stats[3].next.contents[1].contents[0].text
-    result['skill']['headers'] = headers
-    result['skill']['levels'] = levels
-
-    headers, levels = parse_normal(span_stats[3].next)
-    result['burst']['title'] = name_stats[4].next.contents[1].contents[0].text
-    result['burst']['headers'] = headers
-    result['burst']['levels'] = levels
+    for k, v in tables_order.items():
+        headers, levels = parse_normal(span_stats[v].next)
+        result[k]['title'] = name_stats[v].next.contents[1].contents[0].text
+        result[k]['headers'] = headers
+        result[k]['levels'] = levels
 
     # ------ Saving result ------
 
