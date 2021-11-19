@@ -1,5 +1,6 @@
 import json, sys
 from datatypes import Character, Talents, Weapon
+from services.helpers.extractor import extract_char_data
 
 
 class Xinyan(Character):
@@ -8,14 +9,7 @@ class Xinyan(Character):
 
 if __name__ == '__main__':
     user_datafile = sys.argv[1]
-    with open(user_datafile, 'r') as file:
-        user_data = json.loads(file.read())
-    for char in user_data['characters']:
-        if char['key'] == 'Xinyan':
-            break
-    for weapon in user_data['weapons']:
-        if weapon['location'] == 'Xinyan':
-            break
+    weapon, char = extract_char_data(user_datafile, 'Xinyan')
     stats_data = json.loads(open('xinyan.json', 'r').read())
     weapon = Weapon(level=weapon['level'], ascension=weapon['ascension'], refinement=weapon['refinement'], atk=23)
     xinyan = Xinyan(level=char['level'], constellation=char['constellation'], ascension=char['ascension'], talents=Talents(**char['talent']), weapon=weapon)
