@@ -1,3 +1,4 @@
+import json
 from typing import Union
 from enum import Enum
 from dataclasses import dataclass
@@ -47,49 +48,62 @@ class Talents:
 
 @dataclass
 class Weapon:
+    @classmethod
+    def from_db(cls, data):
+        key, level, ascension, refinement, location = data
+        return cls(level, ascension, refinement)
+
     level: int
     ascension: int
     refinement: int
-    atk: int  # TODO REMOVE
+    db_name: str = ''
 
 
-#class ArtifactType(Enum, str):
-#    flower = 'flower'
-#    plume = 'plume'
-#    sands = 'sands'
-#    goblet = 'goblet'
-#   circlet = 'circlet'
+class ArtifactType(str, Enum):
+    flower = 'flower'
+    plume = 'plume'
+    sands = 'sands'
+    goblet = 'goblet'
+    circlet = 'circlet'
 
 
-#class ArtifactStatType(Enum, str):
-#    hp = 'hp'
-#    hp_percent = 'hp_'
-#    atk = 'atk'
-#    atk_percent = 'atk_'
-#    def_percent = 'def_'
-#    elemental_mastery = 'eleMas'
-#    energy_recharge = 'enerRech_'
-#    crit_rate = 'critRate_'
-#    crit_damage = 'critDMG_'
-#    hydro_dmg = 'hydro_dmg_'
-#    electro_dmg = 'electro_dmg_'
-#    pyro_dmg = 'pyro_dmg_'
-#    dendro_dmg = 'dendro_dmg_'
-#    anemo_dmg = 'anemo_dmg_'
-#    cryo_dmg = 'cryo_dmg_'
-#    geo_dmg = 'geo_dmg_'
-#    physical_dmg = 'physical_dmg_'
-#    healing_bonus = 'heal_'
+class ArtifactStatType(str, Enum):
+    hp = 'hp'
+    hp_percent = 'hp_'
+    atk = 'atk'
+    atk_percent = 'atk_'
+    def_percent = 'def_'
+    elemental_mastery = 'eleMas'
+    energy_recharge = 'enerRech_'
+    crit_rate = 'critRate_'
+    crit_damage = 'critDMG_'
+    hydro_dmg = 'hydro_dmg_'
+    electro_dmg = 'electro_dmg_'
+    pyro_dmg = 'pyro_dmg_'
+    dendro_dmg = 'dendro_dmg_'
+    anemo_dmg = 'anemo_dmg_'
+    cryo_dmg = 'cryo_dmg_'
+    geo_dmg = 'geo_dmg_'
+    physical_dmg = 'physical_dmg_'
+    healing_bonus = 'heal_'
 
 
-#class Artifact:
-#    key: str  # TODO: Define all artifact sets
-#    slot: str
-#    type: ArtifactType
-#    level: int
-#    rarity: int
-#    main_stat_key: ArtifactStatType
-#    substats: dict[ArtifactStatType, Union[int, percent]]
+@dataclass
+class Artifact:
+    @classmethod
+    def from_db(cls, data):
+        key, slot, level, rarity, main_stat_key, location, lock, substats = data
+        substats = json.loads(substats)
+        return cls(key, slot, level, rarity, main_stat_key, location, lock, substats)
+
+    key: str  # TODO: Define all artifact sets
+    slot: str
+    type: ArtifactType
+    level: int
+    rarity: int
+    main_stat_key: ArtifactStatType
+    substats: dict[ArtifactStatType, Union[int, percent]]
+
 
 @dataclass
 class Character:
@@ -98,6 +112,14 @@ class Character:
     ascension: int
     talents: Talents
     weapon: Weapon
+    db_name: str = ''
+
+    @classmethod
+    def from_db(cls, char_data, weapon_data, artifacts_data):
+        from services.weapons import weapons_mapping
+        name, level, constellation, ascension, auto, skill, burst = char_data
+        weapon_cls = weapons_mapping.weapon_classes[weapon_data[0]]
+        return cls(level, constellation, ascension, Talents(auto, skill, burst), weapon_cls.from_db(weapon_data))
 
     @property
     def base_hp(self) -> int:
@@ -106,27 +128,27 @@ class Character:
     @property
     def max_hp(self) -> int:
         return 0
-    
+
     @property
     def base_atk(self) -> int:
         return 0
-    
+
     @property
     def atk(self) -> int:
         return self.base_atk
-    
+
     @property
     def base_def(self) -> int:
         return 0
-    
+
     @property
     def def_(self) -> int:
         return self.base_def
-    
+
     @property
     def elemental_mastery(self) -> int:
         return 0
-    
+
     @property
     def crit_rate(self) -> percent:
         return percent(5)

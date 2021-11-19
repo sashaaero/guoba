@@ -4,12 +4,13 @@ from services.helpers.extractor import extract_char_data
 
 
 class Xinyan(Character):
-    pass
+    db_name = 'Xinyan'
 
 
 if __name__ == '__main__':
-    user_datafile = sys.argv[1]
-    weapon, char = extract_char_data(user_datafile, 'Xinyan')
+    from services.database import init_database, fill_database, fetch_data
+    init_database()
+    fill_database(json.loads(open(sys.argv[1], 'r').read()))
     stats_data = json.loads(open('xinyan.json', 'r').read())
-    weapon = Weapon(level=weapon['level'], ascension=weapon['ascension'], refinement=weapon['refinement'], atk=23)
-    xinyan = Xinyan(level=char['level'], constellation=char['constellation'], ascension=char['ascension'], talents=Talents(**char['talent']), weapon=weapon)
+    data = fetch_data(Xinyan.db_name)
+    xinyan = Xinyan.from_db(*data)
