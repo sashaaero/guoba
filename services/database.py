@@ -1,10 +1,19 @@
 import json
 import sqlite3
+import os
 
 DB_FILENAME = 'user_data.db'
 
 
+def __update_filename():
+    import main
+    global DB_FILENAME
+    path = os.path.dirname(main.__file__)
+    DB_FILENAME = os.path.join(path, 'user_data.db')
+
+
 def init_database():
+    __update_filename()
     with sqlite3.connect(DB_FILENAME) as con:
         cursor = con.cursor()
         char_table = 'create table if not exists character(' \
@@ -26,6 +35,7 @@ def init_database():
 
 
 def fill_database(data):
+    __update_filename()
     with sqlite3.connect(DB_FILENAME) as con:
         cursor = con.cursor()
         table_names = ['character', 'weapon', 'artifact']
@@ -61,6 +71,7 @@ def fill_database(data):
 
 
 def fetch_data(char_name):
+    __update_filename()
     with sqlite3.connect(DB_FILENAME) as con:
         cursor = con.cursor()
         sql = 'select * from character where key = ?'

@@ -1,4 +1,4 @@
-import json, sys
+import json, sys, os
 from datatypes import Character, Talents, Weapon
 from services.helpers.extractor import extract_char_data
 
