@@ -1,7 +1,10 @@
 import json
+import sys
+import os
 from typing import Union
 from enum import Enum
-from dataclasses import dataclass
+
+from services.helpers.extractor import parse_stat_value
 
 
 # noinspection PyPep8Naming
@@ -23,6 +26,10 @@ class percent:
         val = 1 + self.float_value
         return other * val
 
+    def __sub__(self, other):
+        assert isinstance(other, percent)
+        return percent(self.percent - other.percent)
+
     def __rmul__(self, other):
         if isinstance(other, percent):
             left_val = other.float_value
@@ -39,24 +46,32 @@ class percent:
         raise NotImplementedError
 
 
-@dataclass
 class Talents:
     auto: int
     skill: int
     burst: int
 
+    def __init__(self, auto: int, skill: int, burst: int):
+        self.auto = auto
+        self.skill = skill
+        self.burst = burst
 
-@dataclass
+
 class Weapon:
-    @classmethod
-    def from_db(cls, data):
-        key, level, ascension, refinement, location = data
-        return cls(level, ascension, refinement)
-
     level: int
     ascension: int
     refinement: int
     db_name: str = ''
+
+    def __init__(self, level: int, ascension: int, refinement: int):
+        self.level = level
+        self.ascension = ascension
+        self.refinement = refinement
+
+    @classmethod
+    def from_db(cls, data):
+        key, level, ascension, refinement, location = data
+        return cls(level, ascension, refinement)
 
 
 class ArtifactType(str, Enum):
@@ -88,14 +103,7 @@ class ArtifactStatType(str, Enum):
     healing_bonus = 'heal_'
 
 
-@dataclass
 class Artifact:
-    @classmethod
-    def from_db(cls, data):
-        key, slot, level, rarity, main_stat_key, location, lock, substats = data
-        substats = json.loads(substats)
-        return cls(key, slot, level, rarity, main_stat_key, location, lock, substats)
-
     key: str  # TODO: Define all artifact sets
     slot: str
     type: ArtifactType
@@ -104,15 +112,53 @@ class Artifact:
     main_stat_key: ArtifactStatType
     substats: dict[ArtifactStatType, Union[int, percent]]
 
+    def __init__(self, key: str, slot: str, type: ArtifactType, level: int, rarity: int, main_stat_key: ArtifactStatType, substats: dict[ArtifactStatType, Union[int, percent]]):
+        self.key = key
+        self.slot = slot
+        self.type = type
+        self.level = level
+        self.rarity = rarity
+        self.main_stat_key = main_stat_key
+        self.substats = substats
 
-@dataclass
+    @classmethod
+    def from_db(cls, data):
+        key, slot, level, rarity, main_stat_key, location, lock, substats = data
+        substats = json.loads(substats)
+        return cls(key, slot, level, rarity, main_stat_key, location, substats)
+
+
 class Character:
     level: int
     constellation: int
     ascension: int
     talents: Talents
     weapon: Weapon
+    ascensions: list[dict]
     db_name: str = ''
+    data_file: str = ''
+
+    def __init__(self, level: int, constellation: int, ascension: int, talents: Talents, weapon: Weapon):
+        self.level = level
+        self.constellation = constellation
+        self.ascension = ascension
+        self.talents = talents
+        self.weapon = weapon
+
+        stats_file = os.path.join(os.path.dirname(sys.modules[self.__class__.__module__].__file__), self.data_file)
+        stats = json.loads(open(stats_file, 'r').read())
+
+        ascensions = []
+        stat_progression = stats['stat_progression']
+        headers = stat_progression['headers']
+        levels = stat_progression['levels']
+        for i in range(0, len(levels), 2):
+            low, high = levels[i], levels[i+1]
+            low_dict = {headers[j]: parse_stat_value(low[j]) for j in range(len(headers))}
+            high_dict = {headers[j]: parse_stat_value(high[j]) for j in range(len(headers))}
+            ascensions.append(dict(min=low_dict, max=high_dict))
+
+        self.ascensions = ascensions
 
     @classmethod
     def from_db(cls, char_data, weapon_data, artifacts_data):
@@ -127,7 +173,7 @@ class Character:
 
     @property
     def max_hp(self) -> int:
-        return 0
+        return self.base_hp
 
     @property
     def base_atk(self) -> int:
