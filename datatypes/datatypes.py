@@ -138,7 +138,10 @@ class Character:
     ascension: int
     talents: Talents
     weapon: Weapon
-    ascensions: list[dict]
+    curr_ascension: dict
+    normal_data: dict
+    skill_data: dict
+    burst_data: dict
     db_name: str = ''
     data_file: str = ''
 
@@ -152,17 +155,17 @@ class Character:
         stats_file = os.path.join(os.path.dirname(sys.modules[self.__class__.__module__].__file__), self.data_file)
         stats = json.loads(open(stats_file, 'r').read())
 
-        ascensions = []
         stat_progression = stats['stat_progression']
         headers = stat_progression['headers']
         levels = stat_progression['levels']
-        for i in range(0, len(levels), 2):
-            low, high = levels[i], levels[i+1]
-            low_dict = {headers[j]: parse_stat_value(low[j]) for j in range(len(headers))}
-            high_dict = {headers[j]: parse_stat_value(high[j]) for j in range(len(headers))}
-            ascensions.append(dict(min=low_dict, max=high_dict))
+        low, high = levels[self.ascension * 2], levels[self.ascension * 2 + 1]
+        low_dict = {headers[j]: parse_stat_value(low[j]) for j in range(len(headers))}
+        high_dict = {headers[j]: parse_stat_value(high[j]) for j in range(len(headers))}
+        self.curr_ascension = dict(min=low_dict, max=high_dict)
 
-        self.ascensions = ascensions
+        curr_level = [parse_stat_value(val) for val in stats['normal']['levels'][self.talents.auto-1]]
+
+        self.normal_data = dict(headers=stats['normal']['headers'], level=curr_level)
 
     @classmethod
     def from_db(cls, char_data, weapon_data, artifacts_data):
