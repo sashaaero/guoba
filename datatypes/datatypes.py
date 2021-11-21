@@ -73,6 +73,10 @@ class Weapon:
         key, level, ascension, refinement, location = data
         return cls(level, ascension, refinement)
 
+    @property
+    def atk(self):
+        return 23  # TODO make real calculations
+
 
 class ArtifactType(str, Enum):
     flower = 'flower'

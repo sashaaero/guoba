@@ -20,5 +20,7 @@ def parse_stat_value(value):
     if value.endswith('+'):
         return int(value[:-1])
     if value.endswith('%'):
-        return percent(value[:-1])
+        return percent(parse_stat_value(value[:-1]))
+    if '.' in value:
+        return float(value)
     return int(value)
