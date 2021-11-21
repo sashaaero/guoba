@@ -35,6 +35,17 @@ class Xinyan(Character):
         atk_bonus = self.ascensions[self.ascension]['min']['ATK']
         return math.ceil(self.base_atk + atk_bonus)
 
+    @property
+    def def_(self) -> int:
+        asc_data = self.ascensions[self.ascension]
+        min_lvl = asc_data['min']['Lv']
+        steps = asc_data['max']['Lv'] - min_lvl
+        min_def = asc_data['min']['Base DEF']
+        def_step = (asc_data['max']['Base DEF'] - min_def) / steps
+        lvl_offset = self.level - min_lvl
+        def_ = min_def + (def_step * lvl_offset)
+        return math.ceil(def_)
+
 
 if __name__ == '__main__':
     from services.database import init_database, fill_database, fetch_data
@@ -47,3 +58,4 @@ if __name__ == '__main__':
     print(f'{xinyan.base_hp=}')
     print(f'{xinyan.base_atk=}')
     print(f'{xinyan.atk=} ({xinyan.base_atk} +{xinyan.atk - xinyan.base_atk})')
+    print(f'xinyan.def={xinyan.def_}')
