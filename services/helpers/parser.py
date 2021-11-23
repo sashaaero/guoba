@@ -30,7 +30,7 @@ def parse_normal(normal):
     return headers, levels
 
 
-def main(char_name):
+def char(char_name):
     url = f"https://genshin.honeyhunterworld.com/db/char/{char_name}/?lang=EN"
     response = requests.get(url)
     response.raise_for_status()
@@ -141,7 +141,14 @@ def weapon(weapon_name, weapon_type):
         file.write(json.dumps(result, indent=2))
 
 
-if __name__ == '__main__':
-    main(sys.argv[1])
-    #weapon(sys.argv[1], sys.argv[2])
+def parser_call(input_list):
+    if len(input_list) != 3:
+        raise ValueError('usage: python parser.py [char]/[weapon] name')
+    parser = input_list[1]
+    name = input_list[2]
+    if parser == 'char':
+        return char(name)
+    elif parser == 'weapon':
+        return weapon(name)
+    raise ValueError(f'{parser} parser is unknown')
 
