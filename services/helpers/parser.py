@@ -67,7 +67,7 @@ def main(char_name):
     result['main_info']['weapon'] = weapon_type.contents[0]
 
     rarity = soup.find('table', {'class': ['item_main_table']})
-    result['main_info']['rarity'] = rarity.contents[3].next.nextSibling.contents.__len__()
+    result['main_info']['rarity'] = len(rarity.contents[3].next.nextSibling.contents)
 
     # ------ Talants and Stats ------
 
@@ -104,7 +104,7 @@ def weapon(weapon_name, weapon_type):
     soup = BeautifulSoup(text, 'lxml')
     link = soup.find_all('a', href=re.compile('^/db/weapon/w_'))
 
-    for i in range(0, link.__len__() - 1, 2):
+    for i in range(0, len(link) - 1, 2):
         if link[i - 1].contents[0] == weapon_name:
             link = link[i - 1].attrs['href']
             #print(link[i - 1].attrs['href'])
@@ -125,7 +125,7 @@ def weapon(weapon_name, weapon_type):
     weapon_stats = soup.find('table', {'class': ['item_main_table']})
     result['main_info']['secondary_stat'] = weapon_stats.contents[3].contents[1].text
 
-    result['main_info']['rarity'] = weapon_stats.contents[1].next.nextSibling.contents.__len__()
+    result['main_info']['rarity'] = len(weapon_stats.contents[1].next.nextSibling.contents)
 
     # ------ Weapon stats ------
 
@@ -140,9 +140,8 @@ def weapon(weapon_name, weapon_type):
     with open(f'{weapon_name}.json', 'w') as file:
         file.write(json.dumps(result, indent=2))
 
-    a =2
-
 
 if __name__ == '__main__':
     main(sys.argv[1])
+    #weapon(sys.argv[1], sys.argv[2])
 
