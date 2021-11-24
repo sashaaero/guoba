@@ -141,14 +141,14 @@ def weapon(weapon_name, weapon_type):
         file.write(json.dumps(result, indent=2))
 
 
-def parser_call(input_list):
-    if len(input_list) != 3:
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
         raise ValueError('usage: python parser.py [char]/[weapon] name')
-    parser = input_list[1]
-    name = input_list[2]
+    parser = sys.argv[1]
+    name = sys.argv[2]
     if parser == 'char':
-        return char(name)
+        char(name)
     elif parser == 'weapon':
-        return weapon(name)
+        weapon(name)
     raise ValueError(f'{parser} parser is unknown')
 
