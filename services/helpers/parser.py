@@ -6,15 +6,18 @@ import re
 
 
 def parse_stat_progression(stat_progression):
-    exclude = ['Ascension', 'Ascension Materials']
+    exclude = ['Ascension', 'Ascension Materials', '']
     headers = [elem.text for elem in stat_progression.contents[0] if elem.text not in exclude]
     size = len(headers)
     levels = []
     for row in stat_progression.contents[1:]:
         row_data = []
-        for i in range(size):
-            row_data.append(row.contents[i].text)
-        levels.append(row_data)
+        if len(row) == 0:
+            continue
+        else:
+            for i in range(size):
+                row_data.append(row.contents[i].text)
+            levels.append(row_data)
 
     return headers, levels
 
@@ -28,6 +31,21 @@ def parse_normal(normal):
     headers = matrix[0]
     levels = matrix[1:]
     return headers, levels
+
+
+def parse_link(url, name, compile):
+    response = requests.get(url)
+    response.raise_for_status()
+
+    text = response.text
+    soup = BeautifulSoup(text, 'lxml')
+    link = soup.find_all('a', href=re.compile(compile))
+
+    for i in range(0, len(link) - 1, 2):
+        if link[i - 1].contents[0] == name:
+            link = link[i - 1].attrs['href']
+            break
+    return link
 
 
 def char(char_name):
@@ -60,7 +78,7 @@ def char(char_name):
     element_elem = element_img.attrs['data-src']
     i = element_elem.rfind('/')
     j = element_elem.find('_', i)
-    element = element_elem[i+1:j]
+    element = element_elem[i + 1:j]
     result['main_info']['element'] = element
 
     weapon_type = soup.find('a', href=re.compile('^/db/weapon/'))
@@ -97,19 +115,9 @@ def weapon(weapon_name, weapon_type):
         "stat_progression": {"headers": [], "levels": []}
     }
     url = f"https://genshin.honeyhunterworld.com/db/weapon/{weapon_type}/?lang=EN"
-    response = requests.get(url)
-    response.raise_for_status()
 
-    text = response.text
-    soup = BeautifulSoup(text, 'lxml')
-    link = soup.find_all('a', href=re.compile('^/db/weapon/w_'))
+    link = parse_link(url, weapon_name, '^/db/weapon/w_')
 
-    for i in range(0, len(link) - 1, 2):
-        if link[i - 1].contents[0] == weapon_name:
-            link = link[i - 1].attrs['href']
-            #print(link[i - 1].attrs['href'])
-            break
-    
     url = f"https://genshin.honeyhunterworld.com{link}"
     response = requests.get(url)
     response.raise_for_status()
@@ -130,6 +138,7 @@ def weapon(weapon_name, weapon_type):
     # ------ Weapon stats ------
 
     weapon_stats = soup.find('table', {'class': ['add_stat_table']})
+
     headers, levels = parse_stat_progression(weapon_stats)
 
     result['stat_progression']['headers'] = headers
@@ -141,6 +150,53 @@ def weapon(weapon_name, weapon_type):
         file.write(json.dumps(result, indent=2))
 
 
+def artifact(artifact_name):
+    result = {
+        "main_info": {"full_name": "", "rarity": ""},
+        "Possible Main Stat Roll 1": {"headers": [], "levels": []},
+        "Possible Substat Roll 1": {"headers": [], "levels": []},
+        "Possible Main Stat Roll 2": {"headers": [], "levels": []},
+        "Possible Substat Roll 2": {"headers": [], "levels": []}
+    }
+
+    url = f"https://genshin.honeyhunterworld.com/db/artifact/?lang=EN"
+
+    link = parse_link(url, artifact_name, '^/db/art/family/a_')
+
+    url = f"https://genshin.honeyhunterworld.com{link}"
+    response = requests.get(url)
+    response.raise_for_status()
+
+    text = response.text
+    soup = BeautifulSoup(text, 'lxml')
+
+    # ------ Main info ------
+
+    result['main_info']['full_name'] = artifact_name
+
+
+    # ------ Artifact stats ------
+    intermediate = []
+    artifact_stats = soup.find_all('span', {'class': ['item_secondary_title']})
+    for row in artifact_stats:
+        if row.contents[0] == " Possible Main Stat Roll":
+            intermediate.append(parse_stat_progression(row.nextSibling.contents[0]))
+
+    # ------ Low stars artifact stats ------
+    result['Possible Main Stat Roll 1']['headers'] = intermediate[0][0]
+    result['Possible Main Stat Roll 1']['levels'] = intermediate[0][1:]
+
+    # ------ high stars artifact stats ------
+
+    result['Possible Main Stat Roll 2']['headers'] = intermediate[1][0]
+    result['Possible Main Stat Roll 2']['levels'] = intermediate[1][1:]
+
+    # ------ Saving result ------
+
+    with open(f'{artifact_name}.json', 'w') as file:
+        file.write(json.dumps(result, indent=2))
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         raise ValueError('usage: python parser.py [char]/[weapon] name')
@@ -149,6 +205,8 @@ if __name__ == '__main__':
     if parser == 'char':
         char(name)
     elif parser == 'weapon':
-        weapon(name)
-    raise ValueError(f'{parser} parser is unknown')
-
+        weapon(name, sys.argv[3])
+    elif parser == 'artifact':
+        artifact(name)
+    else:
+        raise ValueError(f'{parser} parser is unknown')
