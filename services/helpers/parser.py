@@ -5,12 +5,12 @@ from bs4 import BeautifulSoup
 import re
 
 
-def parse_stat_progression(stat_progression):
+def parse_stat_progression(stat_progression, first: int = 0):
     exclude = ['Ascension', 'Ascension Materials', '']
-    headers = [elem.text for elem in stat_progression.contents[0] if elem.text not in exclude]
+    headers = [elem.text for elem in stat_progression.contents[first] if elem.text not in exclude]
     size = len(headers)
     levels = []
-    for row in stat_progression.contents[1:]:
+    for row in stat_progression.contents[first + 1:]:
         row_data = []
         if len(row) == 0:
             continue
@@ -20,6 +20,20 @@ def parse_stat_progression(stat_progression):
             levels.append(row_data)
 
     return headers, levels
+
+
+# я не пришло в голову, как можно по нормальному дополнить функцию parse_stat_progression для сабстатов
+def parse_substat(stat_progression):
+    levels = [[] for i in range(4)]
+    headers = []
+    for row in stat_progression.contents[1:]:
+        if len(row) == 0:
+            continue
+        else:
+            headers.append(row.contents[0].text)
+            for i, col in zip(range(4), row.contents[1:]):
+                levels[i].append(col.text)
+    return headers[1:], levels
 
 
 def parse_normal(normal):
@@ -174,23 +188,30 @@ def artifact(artifact_name):
 
     result['main_info']['full_name'] = artifact_name
 
-
     # ------ Artifact stats ------
     intermediate = []
     artifact_stats = soup.find_all('span', {'class': ['item_secondary_title']})
     for row in artifact_stats:
-        if row.contents[0] == " Possible Main Stat Roll":
+        if " Possible Main Stat Roll" in row.contents[0]:
             intermediate.append(parse_stat_progression(row.nextSibling.contents[0]))
+        elif " Possible Substat Roll" in row.contents[0]:
+            intermediate.append(parse_substat(row.nextSibling.contents[0]))
 
     # ------ Low stars artifact stats ------
     result['Possible Main Stat Roll 1']['headers'] = intermediate[0][0]
     result['Possible Main Stat Roll 1']['levels'] = intermediate[0][1:]
 
+    # ------ Low stars artifact sub stats ------
+    result['Possible Substat Roll 1']['headers'] = intermediate[1][0]
+    result['Possible Substat Roll 1']['levels'] = intermediate[1][1:]
+
     # ------ high stars artifact stats ------
+    result['Possible Main Stat Roll 2']['headers'] = intermediate[2][0]
+    result['Possible Main Stat Roll 2']['levels'] = intermediate[2][1:]
 
-    result['Possible Main Stat Roll 2']['headers'] = intermediate[1][0]
-    result['Possible Main Stat Roll 2']['levels'] = intermediate[1][1:]
-
+    # ------ high stars artifact sub stats ------
+    result['Possible Substat Roll 2']['headers'] = intermediate[3][0]
+    result['Possible Substat Roll 2']['levels'] = intermediate[3][1:]
     # ------ Saving result ------
 
     with open(f'{artifact_name}.json', 'w') as file:
